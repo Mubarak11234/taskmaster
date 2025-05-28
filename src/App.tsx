@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import Payments from "./pages/Payments";
 import AddService from "./pages/AddService";
 import NotFound from "./pages/NotFound";
+import ProviderServices from "./pages/ProviderServices"
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/add-service" element={<AddService />} />
+               <Route path="/provider/:providerId" element={<ProviderServices />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

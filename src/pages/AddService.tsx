@@ -45,75 +45,77 @@ const AddService = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      // First, get or create service provider profile
-      let { data: provider, error: providerError } = await supabase
+  try {
+    // Step 1: Try to fetch existing provider by user_id
+    const { data: existingProviders, error: fetchError } = await supabase
+      .from('service_providers')
+      .select('*')
+      .eq('user_id', user.id);
+
+    let provider;
+
+    if (fetchError) throw fetchError;
+
+    if (existingProviders && existingProviders.length > 0) {
+      provider = existingProviders[0];
+    } else {
+      // Step 2: Insert only if no provider exists for this user
+      const { data: newProvider, error: insertError } = await supabase
         .from('service_providers')
-        .select('*')
-        .eq('user_id', user.id)
+        .insert({
+          user_id: user.id,
+          business_name: user.user_metadata?.full_name || 'My Business',
+          email: user.email,
+          description: 'Professional service provider',
+        })
+        .select()
         .single();
 
-      if (providerError && providerError.code === 'PGRST116') {
-        // Create service provider if doesn't exist
-        const { data: newProvider, error: createError } = await supabase
-          .from('service_providers')
-          .insert({
-            user_id: user.id,
-            business_name: user.user_metadata?.full_name || 'My Business',
-            email: user.email,
-            description: 'Professional service provider'
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        provider = newProvider;
-      } else if (providerError) {
-        throw providerError;
-      }
-
-      // Create the service
-      const { error: serviceError } = await supabase
-        .from('services')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          duration_minutes: parseInt(formData.duration_minutes),
-          category_id: formData.category_id,
-          provider_id: provider.id
-        });
-
-      if (serviceError) throw serviceError;
-
-      toast({
-        title: "Success!",
-        description: "Your service has been added successfully.",
-      });
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        price: '',
-        duration_minutes: '',
-        category_id: ''
-      });
-
-    } catch (error) {
-      console.error('Error adding service:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add service. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      if (insertError) throw insertError;
+      provider = newProvider;
     }
-  };
+
+    // Step 3: Insert service tied to that provider
+    const { error: serviceError } = await supabase.from('services').insert({
+      title: formData.title,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      duration_minutes: parseInt(formData.duration_minutes),
+      category_id: formData.category_id,
+      provider_id: provider.id,
+    });
+
+    if (serviceError) throw serviceError;
+
+    toast({
+      title: 'Success!',
+      description: 'Your service has been added successfully.',
+    });
+
+    // Clear form
+    setFormData({
+      title: '',
+      description: '',
+      price: '',
+      duration_minutes: '',
+      category_id: '',
+    });
+
+  } catch (error) {
+    console.error('Error adding service:', error);
+    toast({
+      title: 'Error',
+      description: 'Failed to add service. Please try again.',
+      variant: 'destructive',
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">

@@ -24,10 +24,10 @@ export const useServiceProviders = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('service_providers')
-        .select('*')
+        .select('*, services(*)') // Include related services
         .eq('is_verified', true)
         .order('rating', { ascending: false });
-      
+
       if (error) throw error;
       return data;
     },

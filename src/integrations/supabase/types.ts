@@ -125,7 +125,7 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
-          is_verified: boolean | null
+          is_verified: boolean | true
           phone: string | null
           rating: number | null
           total_reviews: number | null
